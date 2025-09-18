@@ -1,21 +1,25 @@
 import time
 
 from django.core.management import BaseCommand
-from django.db import connections, OperationalError
+from django.db import connections
+from django.db.utils import OperationalError
 
 
 class Command(BaseCommand):
-    text = "Waits until database is available"
+    help = "Waits until database is available"
 
     def handle(self, *args, **options):
         self.stdout.write("Waiting for database...")
-        db_conn = None
-        while not db_conn:
+
+        db_ready = False
+        while not db_ready:
             try:
-                db_conn = connections["default"]
-                db_conn.cursor()
+                connection = connections["default"]
+                connection.cursor()
+                db_ready = True
             except OperationalError:
-                self.stdout.write("Database connection failed.")
+                self.stdout.write("Database unavailable, waiting 1s...")
                 time.sleep(1)
 
         self.stdout.write(self.style.SUCCESS("Database available!"))
+
